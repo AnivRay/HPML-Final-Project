@@ -255,13 +255,17 @@ def main():
     best_nll_val = 1e8
     best_nll_test = 1e8
     for epoch in range(args.start_epoch, args.n_epochs):
-        start_epoch = time.time()
+        torch.cuda.synchronize()
+        start_epoch = time.perf_counter()
         train_epoch(args=args, loader=dataloaders['train'], epoch=epoch, model=model, model_dp=model_dp,
                     model_ema=model_ema, ema=ema, device=device, dtype=dtype, property_norms=property_norms,
                     nodes_dist=nodes_dist, dataset_info=dataset_info,
                     gradnorm_queue=gradnorm_queue, optim=optim, prop_dist=prop_dist)
-        print(f"Epoch took {time.time() - start_epoch:.1f} seconds.")
-
+        torch.cuda.synchronize()
+        end_epoch = time.perf_counter()
+        epoch_time = end_epoch - start_epoch
+        print(f"Epoch took {epoch_time:.1f} seconds.")        
+        
         if epoch % args.test_epochs == 0:
             if isinstance(model, en_diffusion.EnVariationalDiffusion):
                 wandb.log(model.log_info(), commit=True)
