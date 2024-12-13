@@ -12,6 +12,7 @@ import wandb
 from os.path import join
 from qm9.models import get_optim, get_model, get_autoencoder, get_latent_diffusion
 from equivariant_diffusion import en_diffusion
+from torch.amp import GradScaler
 
 from equivariant_diffusion import utils as diffusion_utils
 import torch
@@ -128,9 +129,12 @@ parser.add_argument('--filter_molecule_size', type=int, default=None,
                     help="Only use molecules below this size.")
 parser.add_argument('--sequential', action='store_true',
                     help='Organize data by size to reduce average memory usage.')
+# HPML Arguments
+parser.add_argument('--compile', type=eval, default=False, help='to compile or not to compile')
+parser.add_argument('--use_amp', type=eval, default=False, help='to use mixed precision or not')
 args = parser.parse_args()
 
-data_file = './data/geom/geom_drugs_30.npy'
+data_file = './data/geom/All_XANES.npy'
 
 if args.remove_h:
     raise NotImplementedError()
@@ -210,7 +214,10 @@ else:
     model, nodes_dist, prop_dist = get_autoencoder(args, device, dataset_info, dataloaders['train'])
 
 model = model.to(device)
+if args.compile:
+    model = torch.compile(model)
 optim = get_optim(args, model)
+scaler = GradScaler() if args.use_amp else None
 # print(model)
 
 
@@ -251,19 +258,24 @@ def main():
     best_nll_val = 1e8
     best_nll_test = 1e8
     for epoch in range(args.start_epoch, args.n_epochs):
-        start_epoch = time.time()
+        torch.cuda.synchronize()
+        start_epoch = time.perf_counter()
         train_test.train_epoch(args, dataloaders['train'], epoch, model, model_dp, model_ema, ema, device, dtype,
                                property_norms, optim, nodes_dist, gradnorm_queue, dataset_info,
-                               prop_dist)
-        print(f"Epoch took {time.time() - start_epoch:.1f} seconds.")
+                               prop_dist, scaler=scaler)
+        torch.cuda.synchronize()
+        end_epoch = time.perf_counter()
+        epoch_time = end_epoch - start_epoch
+        print(f"Epoch took {epoch_time:.1f} seconds.")
 
         if epoch % args.test_epochs == 0:
             if isinstance(model, en_diffusion.EnVariationalDiffusion):
                 wandb.log(model.log_info(), commit=True)
 
             if not args.break_train_epoch:
-                train_test.analyze_and_save(epoch, model_ema, nodes_dist, args, device,
-                                            dataset_info, prop_dist, n_samples=args.n_stability_samples)
+                # train_test.analyze_and_save(epoch, model_ema, nodes_dist, args, device,
+                #                             dataset_info, prop_dist, n_samples=args.n_stability_samples)
+                pass
             nll_val = train_test.test(args, dataloaders['val'], epoch, model_ema_dp, device, dtype,
                                       property_norms, nodes_dist, partition='Val')
             nll_test = train_test.test(args, dataloaders['test'], epoch, model_ema_dp, device, dtype,

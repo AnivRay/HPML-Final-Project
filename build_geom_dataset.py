@@ -93,17 +93,17 @@ def load_split_data(conformation_file, val_proportion=0.1, test_proportion=0.1,
     # print('Warning, currently taking a random permutation for '
     #       'train/val/test partitions, this needs to be fixed for'
     #       'reproducibility.')
-    # assert not os.path.exists(os.path.join(base_path, 'geom_permutation.npy'))
-    # np.save(os.path.join(base_path, 'geom_permutation.npy'), perm)
+    # assert not os.path.exists(os.path.join(base_path, 'XANES_permutation.npy'))
+    # np.save(os.path.join(base_path, 'XANES_permutation.npy'), perm)
     # del perm
 
-    perm = np.load(os.path.join(base_path, 'geom_permutation.npy'))
+    perm = np.load(os.path.join(base_path, 'XANES_permutation.npy'))
     data_list = [data_list[i] for i in perm]
 
     num_mol = len(data_list)
     val_index = int(num_mol * val_proportion)
     test_index = val_index + int(num_mol * test_proportion)
-    val_data, test_data, train_data = np.split(data_list, [val_index, test_index])
+    val_data, test_data, train_data = data_list[:val_index], data_list[val_index:test_index], data_list[test_index:] # np.split(data_list, [val_index, test_index])
     return train_data, val_data, test_data
 
 
