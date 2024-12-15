@@ -73,6 +73,8 @@ def test(args, flow_dp, nodes_dist, device, dtype, loader, partition='Test', num
     nll_epoch = 0
     n_samples = 0
     for pass_number in range(num_passes):
+        torch.cuda.synchronize()
+        start_epoch = time.perf_counter()
         with torch.no_grad():
             for i, data in enumerate(loader):
                 # Get data
@@ -96,16 +98,26 @@ def test(args, flow_dp, nodes_dist, device, dtype, loader, partition='Test', num
                 else:
                     context = None
 
+                torch.cuda.synchronize()
+                start_batch = time.perf_counter()
                 # transform batch through flow
                 nll, _, _ = losses.compute_loss_and_nll(args, flow_dp, nodes_dist, x, h, node_mask,
                                                         edge_mask, context)
                 # standard nll from forward KL
+                torch.cuda.synchronize()
+                end_batch = time.perf_counter()
+                batch_time = end_batch - start_batch
+                print(f"Forward pass took {batch_time:.4f} seconds.")
 
                 nll_epoch += nll.item() * batch_size
                 n_samples += batch_size
                 if i % args.n_report_steps == 0:
                     print(f"\r {partition} NLL \t, iter: {i}/{len(loader)}, "
                           f"NLL: {nll_epoch/n_samples:.2f}")
+        torch.cuda.synchronize()
+        end_epoch = time.perf_counter()
+        epoch_time = end_epoch - start_epoch
+        print(f"Epoch took {epoch_time:.4f} seconds.")
 
     return nll_epoch/n_samples
 
@@ -120,8 +132,8 @@ def main():
                         help='Specify model path')
     parser.add_argument('--save_to_xyz', type=eval, default=False,
                         help='Should save samples to xyz files.')
-    parser.add_argument('--compile', type=eval, default=False, help='to compile or not to compile')
-    parser.add_argument('--quantize', type=eval, default=False, help='to quantize or not to quantize')
+    parser.add_argument('--compile', action='store_true', help='to compile or not to compile')
+    parser.add_argument('--quantize', action='store_true', help='to quantize or not to quantize')
 
     eval_args, unparsed_args = parser.parse_known_args()
 
@@ -136,7 +148,7 @@ def main():
     if not hasattr(args, 'aggregation_method'):
         args.aggregation_method = 'sum'
 
-    args.cuda = not args.no_cuda and torch.cuda.is_available()
+    args.cuda = False # not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
     args.device = device
     dtype = torch.float32
@@ -150,6 +162,7 @@ def main():
 
     # Load model
     generative_model, nodes_dist, prop_dist = get_latent_diffusion(args, device, dataset_info, dataloaders['train'])
+    # print(generative_model)
     if prop_dist is not None:
         property_norms = compute_mean_mad(dataloaders, args.conditioning, args.dataset)
         prop_dist.set_normalizer(property_norms)
@@ -180,10 +193,9 @@ def main():
         val_name = 'valid'
         num_passes = 5
 
-    
-    if args.quantize:
-        generative_model = quantize_dynamic(generative_model, {torch.nn.Linear}, dtype=torch.qint8)
-    if args.compile:
+    if eval_args.quantize:
+        generative_model = quantize_dynamic(generative_model, qconfig_spec={torch.nn.Linear}, dtype=torch.qint8)
+    if eval_args.compile:
         generative_model = torch.compile(generative_model)
 
     # Evaluate negative log-likelihood for the validation and test partitions

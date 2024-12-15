@@ -130,8 +130,8 @@ parser.add_argument('--filter_molecule_size', type=int, default=None,
 parser.add_argument('--sequential', action='store_true',
                     help='Organize data by size to reduce average memory usage.')
 # HPML Arguments
-parser.add_argument('--compile', type=eval, default=False, help='to compile or not to compile')
-parser.add_argument('--use_amp', type=eval, default=False, help='to use mixed precision or not')
+parser.add_argument('--compile', action='store_true', help='to compile or not to compile')
+parser.add_argument('--use_amp', action='store_true', help='to use mixed precision or not')
 args = parser.parse_args()
 
 data_file = './data/geom/All_XANES.npy'
@@ -266,7 +266,7 @@ def main():
         torch.cuda.synchronize()
         end_epoch = time.perf_counter()
         epoch_time = end_epoch - start_epoch
-        print(f"Epoch took {epoch_time:.1f} seconds.")
+        print(f"Epoch took {epoch_time:.4f} seconds.")
 
         if epoch % args.test_epochs == 0:
             if isinstance(model, en_diffusion.EnVariationalDiffusion):

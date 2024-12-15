@@ -76,7 +76,7 @@ def train_epoch(args, loader, epoch, model, model_dp, model_ema, ema, device, dt
         torch.cuda.synchronize()
         end_batch = time.perf_counter()
         batch_time = end_batch - start_batch
-        print(f"Forward and backward pass took {batch_time:.1f} seconds.")
+        print(f"Forward and backward pass took {batch_time:.4f} seconds.")
 
         # Update EMA if enabled.
         if args.ema_decay > 0:
