@@ -18,6 +18,7 @@ from equivariant_diffusion import utils as diffusion_utils
 import torch
 import time
 import pickle
+import json
 
 from qm9.utils import prepare_context, compute_mean_mad
 import train_test
@@ -132,6 +133,7 @@ parser.add_argument('--sequential', action='store_true',
 # HPML Arguments
 parser.add_argument('--compile', action='store_true', help='to compile or not to compile')
 parser.add_argument('--use_amp', action='store_true', help='to use mixed precision or not')
+parser.add_argument('--outfile_name', type=str, default="timing", help='Specify name of time output file')
 args = parser.parse_args()
 
 data_file = './data/geom/All_XANES.npy'
@@ -257,16 +259,20 @@ def main():
 
     best_nll_val = 1e8
     best_nll_test = 1e8
+    epochTimes = []
+    batchTimes = []
     for epoch in range(args.start_epoch, args.n_epochs):
         torch.cuda.synchronize()
         start_epoch = time.perf_counter()
-        train_test.train_epoch(args, dataloaders['train'], epoch, model, model_dp, model_ema, ema, device, dtype,
+        epochBatchTimes = train_test.train_epoch(args, dataloaders['train'], epoch, model, model_dp, model_ema, ema, device, dtype,
                                property_norms, optim, nodes_dist, gradnorm_queue, dataset_info,
                                prop_dist, scaler=scaler)
         torch.cuda.synchronize()
         end_epoch = time.perf_counter()
         epoch_time = end_epoch - start_epoch
-        print(f"Epoch took {epoch_time:.4f} seconds.")
+        epochTimes.append(epoch_time)
+        # print(f"Epoch took {epoch_time:.4f} seconds.")
+        batchTimes.append(epochBatchTimes)
 
         if epoch % args.test_epochs == 0:
             if isinstance(model, en_diffusion.EnVariationalDiffusion):
@@ -305,6 +311,9 @@ def main():
             wandb.log({"Val loss ": nll_val}, commit=True)
             wandb.log({"Test loss ": nll_test}, commit=True)
             wandb.log({"Best cross-validated test loss ": best_nll_test}, commit=True)
+    with open("{}.json".format(args.outfile_name), 'w') as outFile:
+        json.dump({"epoch times":epochTimes, "batch times": batchTimes}, outFile, indent=4)
+
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ def train_epoch(args, loader, epoch, model, model_dp, model_ema, ema, device, dt
     model.train()
     nll_epoch = []
     n_iterations = len(loader)
+    batchTimes = []
     for i, data in enumerate(loader):
         x = data['positions'].to(device, dtype)
         node_mask = data['atom_mask'].to(device, dtype).unsqueeze(2)
@@ -76,7 +77,8 @@ def train_epoch(args, loader, epoch, model, model_dp, model_ema, ema, device, dt
         torch.cuda.synchronize()
         end_batch = time.perf_counter()
         batch_time = end_batch - start_batch
-        print(f"Forward and backward pass took {batch_time:.4f} seconds.")
+        batchTimes.append(batch_time)
+        # print(f"Forward and backward pass took {batch_time:.4f} seconds.")
 
         # Update EMA if enabled.
         if args.ema_decay > 0:
@@ -107,6 +109,7 @@ def train_epoch(args, loader, epoch, model, model_dp, model_ema, ema, device, dt
         if args.break_train_epoch:
             break
     wandb.log({"Train Epoch NLL": np.mean(nll_epoch)}, commit=False)
+    return batchTimes
 
 
 def check_mask_correct(variables, node_mask):

@@ -13,6 +13,7 @@ from equivariant_diffusion.utils import assert_mean_zero_with_mask, remove_mean_
 import torch
 import time
 import pickle
+import json
 from configs.datasets_config import get_dataset_info
 from os.path import join
 from qm9.sampling import sample
@@ -72,9 +73,12 @@ def test(args, flow_dp, nodes_dist, device, dtype, loader, partition='Test', num
     flow_dp.eval()
     nll_epoch = 0
     n_samples = 0
+    epochTimes = []
+    batchTimes = []
     for pass_number in range(num_passes):
         torch.cuda.synchronize()
         start_epoch = time.perf_counter()
+        epochBatchTimes = []
         with torch.no_grad():
             for i, data in enumerate(loader):
                 # Get data
@@ -107,7 +111,8 @@ def test(args, flow_dp, nodes_dist, device, dtype, loader, partition='Test', num
                 torch.cuda.synchronize()
                 end_batch = time.perf_counter()
                 batch_time = end_batch - start_batch
-                print(f"Forward pass took {batch_time:.4f} seconds.")
+                epochBatchTimes.append(batch_time)
+                # print(f"Forward pass took {batch_time:.4f} seconds.")
 
                 nll_epoch += nll.item() * batch_size
                 n_samples += batch_size
@@ -117,9 +122,11 @@ def test(args, flow_dp, nodes_dist, device, dtype, loader, partition='Test', num
         torch.cuda.synchronize()
         end_epoch = time.perf_counter()
         epoch_time = end_epoch - start_epoch
-        print(f"Epoch took {epoch_time:.4f} seconds.")
+        epochTimes.append(epoch_time)
+        batchTimes.append(epochBatchTimes)
+        # print(f"Epoch took {epoch_time:.4f} seconds.")
 
-    return nll_epoch/n_samples
+    return nll_epoch/n_samples, epochTimes, batchTimes
 
 
 def main():
@@ -134,6 +141,7 @@ def main():
                         help='Should save samples to xyz files.')
     parser.add_argument('--compile', action='store_true', help='to compile or not to compile')
     parser.add_argument('--quantize', action='store_true', help='to quantize or not to quantize')
+    parser.add_argument('--outfile_name', type=str, default="timing", help='Specify name of time output file')
 
     eval_args, unparsed_args = parser.parse_known_args()
 
@@ -188,7 +196,7 @@ def main():
     # In GEOM-Drugs the validation partition is named 'val', not 'valid'.
     if args.dataset == 'geom':
         val_name = 'val'
-        num_passes = 1
+        num_passes = 50
     else:
         val_name = 'valid'
         num_passes = 5
@@ -199,11 +207,11 @@ def main():
         generative_model = torch.compile(generative_model)
 
     # Evaluate negative log-likelihood for the validation and test partitions
-    val_nll = test(args, generative_model, nodes_dist, device, dtype,
+    val_nll, _, _ = test(args, generative_model, nodes_dist, device, dtype,
                    dataloaders[val_name],
                    partition='Val')
     print(f'Final val nll {val_nll}')
-    test_nll = test(args, generative_model, nodes_dist, device, dtype,
+    test_nll, epochTimes, batchTimes = test(args, generative_model, nodes_dist, device, dtype,
                     dataloaders['test'],
                     partition='Test', num_passes=num_passes)
     print(f'Final test nll {test_nll}')
@@ -213,7 +221,8 @@ def main():
         print(f'Overview: val nll {val_nll} test nll {test_nll}',
               # stability_dict,
               file=f)
-
+    with open("{}.json".format(eval_args.outfile_name), 'w') as outFile:
+        json.dump({"epoch times":epochTimes, "batch times": batchTimes}, outFile, indent=4)
 
 if __name__ == "__main__":
     main()
