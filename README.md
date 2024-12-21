@@ -26,8 +26,29 @@ How to run the testing scenario:
 How to plot the profiling data:
 You can run ```plotter.py``` to turn the runtime outputs into the plots used in the report. Note: you will have to name your outputs according to how they are read in the plotting script.
 
-## Results (including charts/tables) and your observations
+## Results and our observations
+![Alt text](figures/TrainEpoch.png)
+![Alt text](figures/TrainBatch.png)
+Figure 1
+![Alt text](figures/TestEpoch.png)
+![Alt text](figures/TestBatch.png)
+Figure 2
+![Alt text](figures/TestLoss.png)
+Figure 3
 
+| **% Decrease in Runtime** | **Training** | **Testing** |
+|----------------------------|--------------|-------------|
+| Epoch Time                | 14.4000%     | 18.7949%    |
+| Total Batch Time          | 12.0354%     | 19.3860%    |
+
+*Table: % Improvement of Compile relative to baseline using runtimes from the last 10 epochs*
+
+
+In Figure 1, we can see the runtime by epoch for each of the training runs: baseline, Compile, mixed precision, and Compile+mixed precision. We observe that runs with Compile have unusually high initial runtime as expected due to torch compile's high initial overhead. We also note that Compile on its own is the best out of all the strategies, with its runtime falling below baseline after the first few epochs. However, mixed precision training did not show any improvement and the combination of mixed precision with Compile had an even higher runtime than the baseline. These observations hold for both epoch times and batch processing times. 
+
+In Figure 2, we see the runtime by epoch for the testing scenario. Similarly to the training scenario, we see that Compile starts out with extremely high runtimes but quickly beats the baseline. We find that quantization alone and combined with Compile has a higher runtime than the baseline. These trends are valid for both epoch and batch processing metrics. In Figure 3, we consider the impact of the test-time optimization methods on the model's test performance. The plot shows the average test loss achieved by the model under all optimization methods. We note that only Compile achieves similar model performance to the baseline run but that quantization destroys model performance.
+
+We can see that Compile on its own is the best optimization strategy, so we collect some overall metrics to demonstrate its effectiveness. We take the average runtime for the last 10 epochs for training and testing and display the percentage decrease in runtime relative to the baseline run in Table 1. We can see that we achieve a runtime ~10-20% less than the baseline in all scenarios.
 
 Original Repo README file contents below:
 # GeoLDM: Geometric Latent Diffusion Models for 3D Molecule Generation
