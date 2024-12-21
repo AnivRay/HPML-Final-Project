@@ -20,6 +20,10 @@ def compute_loss_and_nll(args, generative_model, nodes_dist, x, h, node_mask, ed
 
         # Here x is a position tensor, and h is a dictionary with keys
         # 'categorical' and 'integer'.
+        # explanation = torch._dynamo.explain(generative_model, x, h, node_mask, edge_mask, context)
+        # with open("dynamo_log.txt", 'w') as outfile:
+        #     outfile.write(str(explanation))
+        # exit(0)
         with torch.amp.autocast("cuda", enabled=args.use_amp):
             nll = generative_model(x, h, node_mask, edge_mask, context)
 
