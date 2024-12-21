@@ -29,19 +29,24 @@ You can run ```plotter.py``` to turn the runtime outputs into the plots used in 
 ## Results and our observations
 ![Alt text](figures/TrainEpoch.png)
 ![Alt text](figures/TrainBatch.png)
-Figure 1
+
+**Figure 1**
+
 ![Alt text](figures/TestEpoch.png)
 ![Alt text](figures/TestBatch.png)
-Figure 2
+
+**Figure 2**
+
 ![Alt text](figures/TestLoss.png)
-Figure 3
+
+**Figure 3**
 
 | **% Decrease in Runtime** | **Training** | **Testing** |
 |----------------------------|--------------|-------------|
 | Epoch Time                | 14.4000%     | 18.7949%    |
 | Total Batch Time          | 12.0354%     | 19.3860%    |
 
-*Table: % Improvement of Compile relative to baseline using runtimes from the last 10 epochs*
+**Table 1: % Improvement of Compile relative to baseline using runtimes from the last 10 epochs**
 
 
 In Figure 1, we can see the runtime by epoch for each of the training runs: baseline, Compile, mixed precision, and Compile+mixed precision. We observe that runs with Compile have unusually high initial runtime as expected due to torch compile's high initial overhead. We also note that Compile on its own is the best out of all the strategies, with its runtime falling below baseline after the first few epochs. However, mixed precision training did not show any improvement and the combination of mixed precision with Compile had an even higher runtime than the baseline. These observations hold for both epoch times and batch processing times. 
