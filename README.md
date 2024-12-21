@@ -1,3 +1,35 @@
+# HPML Final Project: Optimizing Latent Diffusion Models for 3D Molecule Generation
+
+## Project Description
+Latent diffusion models have emerged as a powerful tool for generating 3D molecular structures, with significant applications in drug discovery and materials science. However, their high computational demands pose challenges for training and inference efficiency. This study explores the optimization of latent diffusion models through techniques such as Torch Compile, mixed precision training, and quantization. Among these, Compile demonstrated the most promise, reducing runtime by 10-20% without compromising model accuracy. mixed precision training and quantization, on the other hand, failed to yield runtime improvements and, in the case of quantization, significantly degraded performance. These findings underscore the need for optimization strategies tailored to the unique computational characteristics of generative models for 3D molecule generation. The study concludes with actionable recommendations for future research, including advanced quantization strategies, and methods to address non-arithmetic instruction bottlenecks. This work provides a foundation for improving the efficiency and scalability of latent diffusion models, advancing their application in real-world scientific workflows.
+
+## An outline of the code repository
+data is stored in the ```data/geom/All_XANES.npy``` file. The original main python file is ```main_geom_drugs.py```, but for ease of use, we introduce a new file ```my_runner.py``` which runs the necessary commands with all the arguments included. A Python script ```plotter.py``` was added to plot figures. Otherwise, the repository structure remains the same as the one it was forked from.
+
+## Example commands to execute the code
+First, you have to set up your Python environment. We used Python version 3.9.20.
+```pip install -r requirements2.txt```
+How to run the training scenario:
+1. Make sure the argument to ```os.system``` is ```drugsCommand```
+2. Do not change any of the arguments in the ```drugsCommand``` string except for the following
+    - ```--outfile_name```: the value of this argument will be the name given to the file that contains all the runtime profiling metrics
+    - ```--compile```: This is a flag. If included, torch.compile will be used
+    - ```--use_amp```: This is a flag. If included, automatic mixed precision training will be used
+  
+How to run the testing scenario:
+1. Make sure the argument to ```os.system``` is ```drugsTestCommand```
+2. Do not change any of the arguments in the ```drugsTestCommand``` string except for the following
+    - ```--outfile_name```: the value of this argument will be the name given to the file that contains all the runtime profiling metrics
+    - ```--compile```: This is a flag. If included, torch.compile will be used
+    - ```--quantize```: This is a flag. If included, dynamic quantization will be used
+  
+How to plot the profiling data:
+You can run ```plotter.py``` to turn the runtime outputs into the plots used in the report. Note: you will have to name your outputs according to how they are read in the plotting script.
+
+## Results (including charts/tables) and your observations
+
+
+Original Repo README file contents below:
 # GeoLDM: Geometric Latent Diffusion Models for 3D Molecule Generation
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/MinkaiXu/GeoLDM/blob/main/LICENSE)
