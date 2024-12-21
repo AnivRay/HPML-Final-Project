@@ -28,7 +28,7 @@ EN_diffusion.egg-info/
 *example.pdb
 qm9/property_prediction/outputs/*
 qm9_conditional.sh
-figures/
+# figures/
 geom_drugs.sh
 notebooks/*
 .venv
