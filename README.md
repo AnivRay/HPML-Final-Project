@@ -1,5 +1,5 @@
 # HPML Final Project: Optimizing Latent Diffusion Models for 3D Molecule Generation
-
+Aniv Ray and Jehil Mehta
 ## Project Description
 Latent diffusion models have emerged as a powerful tool for generating 3D molecular structures, with significant applications in drug discovery and materials science. However, their high computational demands pose challenges for training and inference efficiency. This study explores the optimization of latent diffusion models through techniques such as Torch Compile, mixed precision training, and quantization. Among these, Compile demonstrated the most promise, reducing runtime by 10-20% without compromising model accuracy. mixed precision training and quantization, on the other hand, failed to yield runtime improvements and, in the case of quantization, significantly degraded performance. These findings underscore the need for optimization strategies tailored to the unique computational characteristics of generative models for 3D molecule generation. The study concludes with actionable recommendations for future research, including advanced quantization strategies, and methods to address non-arithmetic instruction bottlenecks. This work provides a foundation for improving the efficiency and scalability of latent diffusion models, advancing their application in real-world scientific workflows.
 
