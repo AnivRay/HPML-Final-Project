@@ -14,9 +14,9 @@ def plotAblation(jsonFilenames, title="Train"):
         X = [i+1 for i in range(len(epochData))]
         plt.plot(X, epochData, label=key)
 
-    controlVal = sum(data[jsonFilenames[0]]["epoch times"][-10:])
+    baselineVal = sum(data[jsonFilenames[0]]["epoch times"][-10:])
     compileVal = sum(data[jsonFilenames[1]]["epoch times"][-10:])
-    print("Epoch Time Improvement: ", 100 * (controlVal - compileVal) / compileVal, "%")
+    print("Epoch Time Improvement: ", 100 * (baselineVal - compileVal) / compileVal, "%")
 
     plt.yscale('log')
 
@@ -34,9 +34,9 @@ def plotAblation(jsonFilenames, title="Train"):
         X = [i+1 for i in range(len(batchData))]
         plt.plot(X, batchData, label=key)
 
-    controlVal = sum([sum(epochBatches) for epochBatches in data[jsonFilenames[0]]["batch times"]][-10:])
+    baselineVal = sum([sum(epochBatches) for epochBatches in data[jsonFilenames[0]]["batch times"]][-10:])
     compileVal = sum([sum(epochBatches) for epochBatches in data[jsonFilenames[1]]["batch times"]][-10:])
-    print("Batch Processing Time Improvement: ", 100 * (controlVal - compileVal) / compileVal, "%")
+    print("Batch Processing Time Improvement: ", 100 * (baselineVal - compileVal) / compileVal, "%")
 
     plt.yscale('log')
 
@@ -49,12 +49,12 @@ def plotAblation(jsonFilenames, title="Train"):
 
 def plotTestAblation():
     print("Plotting Test Ablation")
-    jsonFilenames = ["test_control", "test_compile", "test_quant", "test_compile+quant"]
+    jsonFilenames = ["test_baseline", "test_compile", "test_quant", "test_compile+quant"]
     plotAblation(jsonFilenames, title="Test")
 
 def plotTrainAblation():
     print("Plotting Train Ablation")
-    jsonFilenames = ["train_control", "train_compile", "train_amp", "train_compile+amp"]
+    jsonFilenames = ["train_baseline", "train_compile", "train_amp", "train_compile+amp"]
     plotAblation(jsonFilenames, title="Train")
     
 def plotAccuracies(accs):
@@ -70,7 +70,7 @@ def plotAccuracies(accs):
 
     plt.savefig("figures/TestLoss.png")
 
-test_losses = {"control": -78.16336919762789, "compile": -75.64637800851249, "quantized": -6.353716566571718, "compile+quantized": -7.511720192686234}
+test_losses = {"baseline": -78.16336919762789, "compile": -75.64637800851249, "quantized": -6.353716566571718, "compile+quantized": -7.511720192686234}
 plotTrainAblation()
 plotTestAblation()
 plotAccuracies(test_losses)
