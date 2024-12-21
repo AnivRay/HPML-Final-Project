@@ -7,7 +7,8 @@ def plotAblation(jsonFilenames, title="Train"):
     for jsonFilename in jsonFilenames:
         with open("{}.json".format(jsonFilename), 'r') as inFile:
             data[jsonFilename] = json.load(inFile)
-
+    
+    plt.clf()
     for (key, runData) in data.items():
         epochData = runData["epoch times"]
         X = [i+1 for i in range(len(epochData))]
@@ -24,7 +25,7 @@ def plotAblation(jsonFilenames, title="Train"):
     plt.ylabel("Epoch Time (s)")
 
     plt.legend()
-    plt.savefig("{}Epoch.png".format(title))
+    plt.savefig("figures/{}Epoch.png".format(title))
 
     plt.clf()
     for (key, runData) in data.items():
@@ -44,7 +45,7 @@ def plotAblation(jsonFilenames, title="Train"):
     plt.ylabel("Total Batch Time per Epoch (s)")
 
     plt.legend()
-    plt.savefig("{}Batch.png".format(title))
+    plt.savefig("figures/{}Batch.png".format(title))
 
 def plotTestAblation():
     print("Plotting Test Ablation")
@@ -60,13 +61,14 @@ def plotAccuracies(accs):
     items = accs.items()
     keys = [item[0] for item in items]
     values = [item[1] for item in items]
+    plt.clf()
     plt.bar(keys, values)
 
     plt.title("Test Loss")
     plt.xlabel("Optimization Type")
     plt.ylabel("Test Loss")
 
-    plt.savefig("TestLoss.png")
+    plt.savefig("figures/TestLoss.png")
 
 test_losses = {"control": -78.16336919762789, "compile": -75.64637800851249, "quantized": -6.353716566571718, "compile+quantized": -7.511720192686234}
 plotTrainAblation()
